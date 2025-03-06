@@ -3,3 +3,8 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+
+api_credit_cards:
+    path: /api/credit-cards
+    controller: App\Controller\CreditCardController::index
+    methods: GET
