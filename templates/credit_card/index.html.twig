@@ -1,0 +1,334 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Credit Cards{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .user-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-email {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+        }
+        .filter-sidebar {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .credit-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .rating-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #28a745;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .card-features {
+            list-style: none;
+            padding-left: 0;
+        }
+        .card-features li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        .card-features li::before {
+            content: "✓";
+            color: #28a745;
+            position: absolute;
+            left: 0;
+        }
+        .payment-methods {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .payment-method {
+            width: 40px;
+            height: 25px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* New styles for information section */
+        .card-info-content {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .card-info-content p {
+            margin-bottom: 0.5rem;
+        }
+        .card-info-content ul, 
+        .card-info-content ol {
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .card-info-content li {
+            margin-bottom: 0.25rem;
+        }
+        .card-info-content h1,
+        .card-info-content h2,
+        .card-info-content h3,
+        .card-info-content h4,
+        .card-info-content h5,
+        .card-info-content h6 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .card-info-content a {
+            color: #0d6efd;
+            text-decoration: none;
+        }
+        .card-info-content a:hover {
+            text-decoration: underline;
+        }
+        .card-info-content table {
+            width: 100%;
+            margin-bottom: 0.5rem;
+            border-collapse: collapse;
+        }
+        .card-info-content th,
+        .card-info-content td {
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+        }
+        .card-info-content th {
+            background-color: #f8f9fa;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        {% if app.user %}
+            <div class="user-info">
+                <div class="user-email">
+                    <i class="fas fa-user-circle"></i> {{ app.user.email }}
+                </div>
+                <a href="{{ path('app_logout') }}" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Filters</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="get">
+                            <div class="mb-3">
+                                <label class="form-label">Card Type</label>
+                                <select name="card_type" class="form-select">
+                                    <option value="">All Types</option>
+                                    <option value="credit" {% if filters.cardType == 'credit' %}selected{% endif %}>Credit</option>
+                                    <option value="debit" {% if filters.cardType == 'debit' %}selected{% endif %}>Debit</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Banks</label>
+                                {% for bank in stats.banks %}
+                                    <div class="form-check">
+                                        <input type="checkbox" name="bank[]" value="{{ bank.id }}" class="form-check-input"
+                                               {% if bank.id in filters.bank|default([]) %}checked{% endif %}>
+                                        <label class="form-check-label">
+                                            {{ bank.name }} ({{ bank.count }})
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Annual Equivalent Rate</label>
+                                <div class="input-group mb-2">
+                                    <input type="number" name="min_aer" class="form-control" placeholder="Min"
+                                           value="{{ filters.AERMin }}" step="0.01">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <div class="input-group">
+                                    <input type="number" name="max_aer" class="form-control" placeholder="Max"
+                                           value="{{ filters.AERMax }}" step="0.01">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Annual Charges</label>
+                                <div class="input-group mb-2">
+                                    <input type="number" name="min_annual_charges" class="form-control" placeholder="Min"
+                                           value="{{ filters.annualChargesMin }}" step="0.01">
+                                    <span class="input-group-text">€</span>
+                                </div>
+                                <div class="input-group">
+                                    <input type="number" name="max_annual_charges" class="form-control" placeholder="Max"
+                                           value="{{ filters.annualChargesMax }}" step="0.01">
+                                    <span class="input-group-text">€</span>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Card Types</h6>
+                        <ul class="list-unstyled">
+                            <li>Credit Cards: {{ stats.cardTypes.credit }}</li>
+                            <li>Debit Cards: {{ stats.cardTypes.debit }}</li>
+                        </ul>
+
+                        <h6>AER Ranges</h6>
+                        <ul class="list-unstyled">
+                            <li>Below 15%: {{ stats.taeRanges.below_15 }}</li>
+                            <li>15% - 30%: {{ stats.taeRanges['15_to_30'] }}</li>
+                            <li>Above 30%: {{ stats.taeRanges.above_30 }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for card in creditCards %}
+                        <div class="col">
+                            <div class="card h-100">
+                                {% if card.imageUrl %}
+                                    <img src="{{ card.imageUrl }}" class="card-img-top" alt="{{ card.name }} logo">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ card.name }}</h5>
+                                    <p class="card-text text-muted">{{ card.bank.name }}</p>
+
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Rating:</span>
+                                            <span class="text-warning">
+                                                {% for i in 1..5 %}
+                                                    {% if i <= card.rating %}
+                                                        <i class="fas fa-star"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th>AER:</th>
+                                            <td>{{ card.annualEquivalentRate }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <th>First Year Fee:</th>
+                                            <td>{{ card.firstYearFee }}€</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Annual Charges:</th>
+                                            <td>{{ card.annualCharges }}€</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Incentive Amount:</th>
+                                            <td>{{ card.incentiveAmount }}€</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Reward Program:</th>
+                                            <td>{{ card.hasRewardProgram ? 'Yes' : 'No' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Insurance:</th>
+                                            <td>{{ card.hasInsurance ? 'Yes' : 'No' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>ATM Free Domestic:</th>
+                                            <td>{{ card.atmFreeDomestic ? 'Yes' : 'No' }}</td>
+                                        </tr>
+                                        {% if card.website %}
+                                        <tr>
+                                            <th>Website:</th>
+                                            <td>
+                                                <a href="{{ card.website }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-external-link-alt"></i> Visit Website
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+
+                                    {% if card.information %}
+                                    <div class="mt-3">
+                                        <button class="btn btn-outline-secondary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#info-{{ card.id }}" aria-expanded="false" aria-controls="info-{{ card.id }}">
+                                            <i class="fas fa-info-circle"></i> Additional Information
+                                        </button>
+                                        <div class="collapse mt-2" id="info-{{ card.id }}">
+                                            <div class="card-info-content">
+                                                {{ card.information|raw }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="payment-methods">
+                                        <div class="payment-method">
+                                            <i class="fab fa-apple-pay"></i>
+                                        </div>
+                                        <div class="payment-method">
+                                            <i class="fab fa-google-pay"></i>
+                                        </div>
+                                        {% if card.cardType.value == 'credit' %}
+                                            <div class="payment-method">
+                                                <i class="fas fa-credit-card"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <a href="{{ path('app_credit_card_edit', {'id': card.id}) }}" class="btn btn-primary w-100">Edit Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
