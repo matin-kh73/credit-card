@@ -41,8 +41,7 @@ services:
     image: mysql:${MYSQL_VERSION:-8}
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
-      # You should definitely change the password in production
-      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_ROOT_PASSWORD: toor
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-!ChangeMe!}
       MYSQL_USER: ${MYSQL_USER:-app}
     ports:
