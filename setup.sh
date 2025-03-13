@@ -107,8 +107,7 @@ setup_test_env() {
 
 start_containers() {
     print_status "Building and starting Docker containers..."
-    docker-compose build
-    docker-compose up -d
+	docker compose up --pull always -d --wait
     print_status "Docker containers are running"
 }
 

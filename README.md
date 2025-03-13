@@ -39,3 +39,18 @@ docker-compose exec php bin/phpunit
 ```bash
 docker-compose exec php bin/phpunit tests/Unit/Service/CreditCardServiceTest.php
 ```
+
+### Manual Test Setup
+
+If you want to run tests manually, you need to:
+
+1. Create test environment file:
+```bash
+cp .env.test.example .env.test
+```
+
+2. Create and migrate test database:
+```bash
+docker-compose exec php bin/console doctrine:database:create --if-not-exists --env=test
+docker-compose exec php bin/console doctrine:migrations:migrate --no-interaction --env=test
+```
