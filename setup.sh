@@ -113,13 +113,13 @@ start_containers() {
 
 wait_for_services() {
     print_status "Waiting for services to be ready..."
-    sleep 10
+    sleep 15
     print_status "Services are ready"
 }
 
 install_dependencies() {
     print_status "Installing PHP dependencies..."
-    docker-compose exec -T php composer install --no-interaction --no-scripts --prefer-dist
+    docker compose exec -T php composer install --no-interaction
     print_status "PHP dependencies installed"
 }
 
