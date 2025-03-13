@@ -2,7 +2,6 @@
 
 namespace App\Repository;
 
-use App\Entity\CreditCard;
 use App\Entity\CreditCardEdit;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -12,8 +11,8 @@ use Doctrine\Persistence\ManagerRegistry;
  *
  * @method CreditCardEdit|null find($id, $lockMode = null, $lockVersion = null)
  * @method CreditCardEdit|null findOneBy(array $criteria, array $orderBy = null)
- * @method CreditCardEdit[]    findAll()
- * @method CreditCardEdit[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method CreditCardEdit[] findAll()
+ * @method CreditCardEdit[] findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class CreditCardEditRepository extends ServiceEntityRepository
 {
@@ -22,13 +21,19 @@ class CreditCardEditRepository extends ServiceEntityRepository
         parent::__construct($registry, CreditCardEdit::class);
     }
 
-    public function save(CreditCardEdit $entity, bool $flush = false): void
+    public function create(array $data): CreditCardEdit
     {
-        $this->getEntityManager()->persist($entity);
+        $creditEdit = new CreditCardEdit();
+        $creditEdit->setName($data['name']);
+        $creditEdit->setAnnualCharges($data['annualCharges']);
+        $creditEdit->setDescription($data['description']);
+        $creditEdit->setUser($data['user']);
+        $creditEdit->setCreditCard($data['creditCard']);
 
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
+        $this->getEntityManager()->persist($creditEdit);
+        $this->getEntityManager()->flush();
+
+        return $creditEdit;
     }
 
     public function remove(CreditCardEdit $entity, bool $flush = false): void
@@ -39,17 +44,4 @@ class CreditCardEditRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
-
-    /**
-     * @return CreditCardEdit[] Returns an array of CreditCardEdit objects
-     */
-    public function findByCreditCardOrderedByDate(CreditCard $creditCard): array
-    {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.creditCard = :creditCard')
-            ->setParameter('creditCard', $creditCard)
-            ->orderBy('c.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
-    }
-} 
+}

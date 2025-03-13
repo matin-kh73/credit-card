@@ -2,89 +2,70 @@
 
 namespace App\Service;
 
-use App\Entity\CreditCard;
-use App\Entity\CreditCardEdit;
-use App\Entity\User;
+use App\Entity\{CreditCard, CreditCardEdit, User};
 use App\Repository\CreditCardEditRepository;
 use Exception;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 readonly class CreditCardEditService
 {
-    public function __construct(
-        private CreditCardEditRepository $editRepository,
-        private LoggerInterface $logger,
-        private Security $security
-    ) {
+    public function __construct(private CreditCardEditRepository $editRepository, private Security $security)
+    {
     }
 
+    /**
+     * @throws Exception
+     */
     public function createEdit(CreditCard $creditCard, array $data): ?CreditCardEdit
     {
-        if (!$this->hasChanges($data)) {
-            return null;
+        $user = $this->security->getUser();
+        $this->checkExistenceUser($user);
+
+        $existingEdit = $this->editRepository->findOneBy(['creditCard' => $creditCard]);
+        if ($existingEdit && $existingEdit->getUser() !== $user) {
+            throw new Exception('You are not authorized to edit this credit card', Response::HTTP_FORBIDDEN);
         }
 
+        $data['user'] = $user;
+        $data['creditCard'] = $creditCard;
+
+        return $this->editRepository->create($data);
+    }
+
+    /**
+     * @param CreditCard $creditCard
+     * @return CreditCardEdit
+     *
+     * @throws Exception
+     */
+    public function getUserCreditCard(CreditCard $creditCard): CreditCardEdit
+    {
         $user = $this->security->getUser();
+        $this->checkExistenceUser($user);
+
+        $existingEdit = $this->editRepository->findOneBy(['creditCard' => $creditCard, 'user' => $user]);
+        if (!$existingEdit) {
+            $edit = new CreditCardEdit();
+            $edit->setCreditCard($creditCard);
+            $edit->setUser($user);
+            return $edit;
+        }
+
+        return $existingEdit;
+    }
+
+    /**
+     * @param UserInterface|null $user
+     * @return void
+     *
+     * @throws Exception
+     */
+    private function checkExistenceUser(?UserInterface $user): void
+    {
         if (!$user instanceof User) {
             throw new Exception('User must be logged in to create an edit');
         }
-
-        $edit = new CreditCardEdit();
-        $edit->setCreditCard($creditCard);
-        $edit->setUser($user);
-
-        foreach ($data as $field => $value) {
-            if ($value !== null) {
-                $setter = 'set' . ucfirst($field);
-                if (method_exists($edit, $setter)) {
-                    $edit->$setter($value);
-                }
-            }
-        }
-
-        try {
-            $this->editRepository->save($edit, true);
-            return $edit;
-        } catch (Exception $e) {
-            $this->logger->error('Error saving edit', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            throw $e;
-        }
-    }
-
-    public function getLatestEdit(CreditCard $creditCard): ?CreditCardEdit
-    {
-        $edits = $this->editRepository->findByCreditCardOrderedByDate($creditCard);
-        return $edits[0] ?? null;
-    }
-
-    public function getEffectiveValue(CreditCard $creditCard, string $field): mixed
-    {
-        $latestEdit = $this->getLatestEdit($creditCard);
-        $getter = 'get' . ucfirst($field);
-        if ($latestEdit === null) {
-            return $creditCard->$getter();
-        }
-
-        $value = $latestEdit->$getter();
-        if ($value === null) {
-            $getter = 'get' . ucfirst($field);
-            return $creditCard->$getter();
-        }
-
-        return $value;
-    }
-
-    private function hasChanges(array $data): bool
-    {
-        foreach ($data as $value) {
-            if ($value !== null) {
-                return true;
-            }
-        }
-        return false;
     }
 }
