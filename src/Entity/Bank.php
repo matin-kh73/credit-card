@@ -26,10 +26,10 @@ class Bank
     private ?bool $isActive = true;
 
     #[ORM\Column]
-    private ?DateTimeImmutable $createdAt = null;
+    private ?DateTimeImmutable $createdAt;
 
     #[ORM\Column]
-    private ?DateTimeImmutable $updatedAt = null;
+    private ?DateTimeImmutable $updatedAt;
 
     #[ORM\OneToMany(targetEntity: CreditCard::class, mappedBy: 'bank')]
     private Collection $creditCards;

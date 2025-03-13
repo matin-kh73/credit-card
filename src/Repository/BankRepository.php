@@ -46,8 +46,6 @@ class BankRepository extends ServiceEntityRepository
         $code = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $data['bankName']));
         $bank->setCode($code);
         $bank->setIsActive(true);
-        $bank->setCreatedAt(new DateTimeImmutable());
-        $bank->setUpdatedAt(new DateTimeImmutable());
         $this->getEntityManager()->persist($bank);
 
         return $bank;
@@ -57,6 +55,5 @@ class BankRepository extends ServiceEntityRepository
     {
         $bank->setName($data['bankName']);
         $bank->setCode(strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $data['bankName'])));
-        $bank->setUpdatedAt(new DateTimeImmutable());
     }
 }

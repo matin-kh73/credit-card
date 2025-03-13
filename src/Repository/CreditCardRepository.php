@@ -9,7 +9,6 @@ use App\Enum\CardTypeEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
-use DateTimeImmutable;
 
 class CreditCardRepository extends ServiceEntityRepository
 {
@@ -37,9 +36,7 @@ class CreditCardRepository extends ServiceEntityRepository
             ->setProvider($data['provider'])
             ->setRating($data['rating'])
             ->setWebsite($data['website'])
-            ->setIsActive(true)
-            ->setCreatedAt(new DateTimeImmutable())
-            ->setUpdatedAt(new DateTimeImmutable());
+            ->setIsActive(true);
 
         $this->getEntityManager()->persist($card);
 
@@ -59,8 +56,7 @@ class CreditCardRepository extends ServiceEntityRepository
             ->setInformation($data['information'])
             ->setImageUrl($data['imageUrl'])
             ->setRating($data['rating'])
-            ->setWebsite($data['website'])
-            ->setUpdatedAt(new DateTimeImmutable());
+            ->setWebsite($data['website']);
     }
 
     public function findByFilters(array $filters, ?User $user = null): array
